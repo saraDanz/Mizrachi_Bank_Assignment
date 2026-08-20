@@ -1,3 +1,4 @@
+using Mizrachi.Infrastructure;
 
 namespace Mizrachi.Api
 {
@@ -7,16 +8,22 @@ namespace Mizrachi.Api
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
-
             builder.Services.AddControllers();
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-            builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+
+            // The only call into Infrastructure. Which store backs the API is decided by
+            // configuration inside here, never by a code change (NFR-1.3).
+            builder.Services.AddInfrastructure(builder.Configuration);
+
+            if (builder.Environment.IsDevelopment())
+            {
+                builder.Services.AddEndpointsApiExplorer();
+                builder.Services.AddSwaggerGen();
+            }
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
+            // Registered and mapped only in Development, so the interactive documentation is
+            // absent outside it rather than merely unreachable (NFR-2.7).
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
@@ -26,7 +33,6 @@ namespace Mizrachi.Api
             app.UseHttpsRedirection();
 
             app.UseAuthorization();
-
 
             app.MapControllers();
 
