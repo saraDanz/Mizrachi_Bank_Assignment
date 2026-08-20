@@ -1,0 +1,11 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "ConnectionStrings": {
+    "BankingDb": "REPLACE_ME - e.g. Server=(localdb)\\MSSQLLocalDB;Database=MizrachiBank;Trusted_Connection=True;TrustServerCertificate=True"
+  }
+}
