@@ -228,7 +228,7 @@ Requirements first, code last, with every stage written down before the next beg
    in a log, authorization before existence, hash verification on unknown users, no secret in a
    committed file.
 
-Transcripts of the three design sessions that preceded implementation: [`docs/transcripts/`](docs/transcripts/). The implementation session is not among them — a session cannot export itself while it is running.
+Transcripts of all four sessions, indexed in [`docs/claude-session.md`](docs/claude-session.md): the three design sessions that preceded implementation, and the implementation session itself.
 
 > **Honest note on step 5.** The checklist is real and every commit was reviewed against it, but
 > the early commits were reviewed by hand: the skill was authored during the same session and had
@@ -309,4 +309,4 @@ an erasure request.
 | [`PLAN.md`](PLAN.md) | the design, and the findings that changed it |
 | [`TASKS.md`](TASKS.md) | the work as independently verifiable commits |
 | [`CLAUDE.md`](CLAUDE.md) | the invariants the code is held to |
-| [`docs/transcripts/`](docs/transcripts/) | transcripts of the design sessions that preceded implementation |
+| [`docs/claude-session.md`](docs/claude-session.md) | index of the [`docs/transcripts/`](docs/transcripts/) session transcripts — design and implementation |
