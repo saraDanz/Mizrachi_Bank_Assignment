@@ -72,10 +72,15 @@ public static class InfrastructureRegistration
                 AddSqlite(services, configuration);
                 break;
 
+            case PersistenceOptions.Providers.JsonFile:
+                AddJsonFile(services, configuration);
+                break;
+
             default:
                 throw new InvalidOperationException(
                     $"Persistence:Provider is '{provider ?? "(not set)"}'. Valid values are: " +
-                    $"{PersistenceOptions.Providers.InMemory}, {PersistenceOptions.Providers.Sqlite}.");
+                    $"{PersistenceOptions.Providers.InMemory}, {PersistenceOptions.Providers.Sqlite}, " +
+                    $"{PersistenceOptions.Providers.JsonFile}.");
         }
     }
 
@@ -85,7 +90,21 @@ public static class InfrastructureRegistration
     /// constraint violation FR-1.8 is about; with these set, the losers of a race get the
     /// answer they should get.
     /// </remarks>
-    private static void AddSqlite(IServiceCollection services, IConfiguration configuration)
+    private static void AddJsonFile(IServiceCollection services, IConfiguration configuration)
+    {
+        var fullPath = ResolveFilePath(configuration, PersistenceOptions.Providers.JsonFile);
+
+        services.AddSingleton<JsonFileUserRepository>(_ => new JsonFileUserRepository(fullPath));
+        services.AddSingleton<IUserRepository>(sp => sp.GetRequiredService<JsonFileUserRepository>());
+        services.AddSingleton<IDatabaseInitializer>(sp => sp.GetRequiredService<JsonFileUserRepository>());
+    }
+
+    /// <remarks>
+    /// The path comes from configuration, not from a request, but it is still resolved to a
+    /// full path and confined to a real directory rather than being passed through verbatim
+    /// (SEC-8.3).
+    /// </remarks>
+    private static string ResolveFilePath(IConfiguration configuration, string provider)
     {
         var filePath = configuration
             .GetSection(PersistenceOptions.SectionName)[nameof(PersistenceOptions.FilePath)];
@@ -93,8 +112,12 @@ public static class InfrastructureRegistration
         if (string.IsNullOrWhiteSpace(filePath))
         {
             throw new InvalidOperationException(
-                $"Persistence:FilePath is required when Persistence:Provider is " +
-                $"'{PersistenceOptions.Providers.Sqlite}'.");
+                $"Persistence:FilePath is required when Persistence:Provider is '{provider}'.");
+        }
+
+        if (filePath.IndexOfAny(Path.GetInvalidPathChars()) >= 0)
+        {
+            throw new InvalidOperationException("Persistence:FilePath contains invalid path characters.");
         }
 
         var fullPath = Path.GetFullPath(filePath);
@@ -103,6 +126,13 @@ public static class InfrastructureRegistration
         {
             Directory.CreateDirectory(directory);
         }
+
+        return fullPath;
+    }
+
+    private static void AddSqlite(IServiceCollection services, IConfiguration configuration)
+    {
+        var fullPath = ResolveFilePath(configuration, PersistenceOptions.Providers.Sqlite);
 
         var connectionString = new SqliteConnectionStringBuilder
         {
