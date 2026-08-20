@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Mizrachi.Api.Contracts;
 using Mizrachi.Api.Errors;
 using Mizrachi.Application.UseCases;
@@ -29,6 +30,7 @@ public sealed class UsersController : ControllerBase
     /// <summary>Creates an account (FR-1.1). Open to unauthenticated callers (FR-1.10).</summary>
     [HttpPost]
     [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.Registration)]
     [ProducesResponseType(typeof(CreateUserResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
@@ -60,6 +62,7 @@ public sealed class UsersController : ControllerBase
     /// </summary>
     [HttpPost("validate")]
     [AllowAnonymous]
+    [EnableRateLimiting(RateLimitPolicies.Authentication)]
     [ProducesResponseType(typeof(ValidateUserResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Validate(ValidateUserRequest request, CancellationToken cancellationToken)

@@ -1,6 +1,9 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using Mizrachi.Api.Errors;
+using Mizrachi.Api.Middleware;
 using Mizrachi.Infrastructure;
 using Mizrachi.Infrastructure.Persistence;
 using Mizrachi.Infrastructure.Security;
@@ -14,6 +17,17 @@ namespace Mizrachi.Api
             var builder = WebApplication.CreateBuilder(args);
 
             builder.Services.AddControllers();
+
+            // Model-binding failures otherwise emit ValidationProblemDetails, a second error
+            // shape alongside ours. One shape for every failure (FR-4.2).
+            builder.Services.Configure<ApiBehaviorOptions>(options =>
+                options.InvalidModelStateResponseFactory = context => new BadRequestObjectResult(
+                    ApiProblemDetails.Invalid(
+                        context.HttpContext,
+                        "request_invalid",
+                        "The request is not valid.")));
+
+            builder.Services.AddApiRateLimiting();
 
             // The only call into Infrastructure. Which store backs the API is decided by
             // configuration inside here, never by a code change (NFR-1.3).
@@ -45,7 +59,19 @@ namespace Mizrachi.Api
                 app.UseSwaggerUI();
             }
 
+            // First in the pipeline, so even a failure inside another middleware is answered in
+            // the one error shape and carries a correlation id.
+            app.UseMiddleware<ExceptionHandlingMiddleware>();
+            app.UseMiddleware<CorrelationIdMiddleware>();
+
+            if (!app.Environment.IsDevelopment())
+            {
+                app.UseHsts();
+            }
+
             app.UseHttpsRedirection();
+
+            app.UseRateLimiter();
 
             app.UseAuthentication();
             app.UseAuthorization();
