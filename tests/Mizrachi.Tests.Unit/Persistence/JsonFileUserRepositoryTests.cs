@@ -1,4 +1,6 @@
+using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
+using Mizrachi.Domain;
 using Mizrachi.Infrastructure.Persistence;
 
 namespace Mizrachi.Tests.Unit.Persistence;
@@ -40,31 +42,27 @@ public sealed class JsonFileUserRepositoryTests : UserRepositoryContractTests
     }
 
     [Fact]
-    public void Leaves_no_temporary_file_behind_after_a_write()
+    public async Task Leaves_no_temporary_file_behind_after_a_write()
     {
         // The atomic write moves its temp file into place; a leftover would mean a write path
         // that can be interrupted into leaving a partial file.
-        Repository.TryAddAsync(
-                Mizrachi.Domain.User.Create(Guid.NewGuid(), "alice", "hashed:alice"),
-                CancellationToken.None)
-            .GetAwaiter()
-            .GetResult();
+        await Repository.TryAddAsync(
+            User.Create(Guid.NewGuid(), "alice", "hashed:alice"),
+            CancellationToken.None);
 
         Assert.False(File.Exists(_filePath + ".tmp"));
     }
 
     [Fact]
-    public void Writes_a_file_that_is_valid_json()
+    public async Task Writes_a_file_that_is_valid_json()
     {
-        Repository.TryAddAsync(
-                Mizrachi.Domain.User.Create(Guid.NewGuid(), "alice", "hashed:alice"),
-                CancellationToken.None)
-            .GetAwaiter()
-            .GetResult();
+        await Repository.TryAddAsync(
+            User.Create(Guid.NewGuid(), "alice", "hashed:alice"),
+            CancellationToken.None);
 
-        var document = System.Text.Json.JsonDocument.Parse(File.ReadAllText(_filePath));
+        var document = JsonDocument.Parse(await File.ReadAllTextAsync(_filePath));
 
-        Assert.Equal(System.Text.Json.JsonValueKind.Array, document.RootElement.ValueKind);
+        Assert.Equal(JsonValueKind.Array, document.RootElement.ValueKind);
         Assert.Equal(1, document.RootElement.GetArrayLength());
     }
 }
