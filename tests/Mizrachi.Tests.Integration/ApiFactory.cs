@@ -30,23 +30,26 @@ public class ApiFactory : WebApplicationFactory<Api.Program>
     {
         builder.UseEnvironment(_environment);
 
-        builder.ConfigureAppConfiguration((_, configuration) =>
+        // UseSetting, not ConfigureAppConfiguration. The latter is applied after the app has
+        // built its own configuration, by which point AddInfrastructure has already read
+        // Persistence:Provider and chosen a store - so an override there silently does nothing.
+        var settings = new Dictionary<string, string?>
         {
-            var settings = new Dictionary<string, string?>
-            {
-                ["Jwt:Issuer"] = "mizrachi-bank-api",
-                ["Jwt:Audience"] = "mizrachi-bank-api",
-                ["Jwt:LifetimeMinutes"] = "15",
-                ["Jwt:SigningKey"] = SigningKey
-            };
+            ["Jwt:Issuer"] = "mizrachi-bank-api",
+            ["Jwt:Audience"] = "mizrachi-bank-api",
+            ["Jwt:LifetimeMinutes"] = "15",
+            ["Jwt:SigningKey"] = SigningKey
+        };
 
-            foreach (var setting in _settings)
-            {
-                settings[setting.Key] = setting.Value;
-            }
+        foreach (var setting in _settings)
+        {
+            settings[setting.Key] = setting.Value;
+        }
 
-            configuration.AddInMemoryCollection(settings);
-        });
+        foreach (var setting in settings)
+        {
+            builder.UseSetting(setting.Key, setting.Value);
+        }
     }
 
     /// <summary>
