@@ -1,0 +1,6 @@
+@Mizrachi_Bank_Assignment_HostAddress = http://localhost:5185
+
+GET {{Mizrachi_Bank_Assignment_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
