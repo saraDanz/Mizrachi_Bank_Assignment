@@ -3,8 +3,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using Mizrachi.Api.Errors;
 using Mizrachi.Api.Middleware;
+using Mizrachi.Api.Swagger;
 using Mizrachi.Infrastructure;
 using Mizrachi.Infrastructure.Persistence;
 using Mizrachi.Infrastructure.Security;
@@ -36,10 +38,35 @@ namespace Mizrachi.Api
 
             AddAuthentication(builder);
 
+            // Registered only in Development, so the document and its UI are absent outside it
+            // rather than merely unreachable (NFR-2.7).
             if (builder.Environment.IsDevelopment())
             {
                 builder.Services.AddEndpointsApiExplorer();
-                builder.Services.AddSwaggerGen();
+                builder.Services.AddSwaggerGen(swagger =>
+                {
+                    // Http/bearer rather than ApiKey, so the Authorize box takes the raw token and
+                    // Swagger adds the "Bearer " prefix itself. No default, no example value: a
+                    // pre-filled token in a committed file is a committed credential (NFR-2.6).
+                    swagger.AddSecurityDefinition(
+                        BearerSecurityOperationFilter.SchemeId,
+                        new OpenApiSecurityScheme
+                        {
+                            Name = "Authorization",
+                            Type = SecuritySchemeType.Http,
+                            Scheme = "bearer",
+                            BearerFormat = "JWT",
+                            In = ParameterLocation.Header,
+                            Description =
+                                "Paste the token from POST /api/users/validate. Nothing is stored "
+                                + "or pre-filled, and the token is only accepted by endpoints that "
+                                + "require it."
+                        });
+
+                    // Per-operation, not global: create and validate are anonymous by requirement
+                    // and must not show a padlock.
+                    swagger.OperationFilter<BearerSecurityOperationFilter>();
+                });
             }
 
             var app = builder.Build();

@@ -76,7 +76,7 @@ problem — not on the first request (NFR-1.4).
 
 ```bash
 dotnet build
-dotnet test          # 167 unit + 38 integration
+dotnet test          # 167 unit + 44 integration
 ```
 
 The unit suite includes a repository contract suite run three times, once per store, so a store
@@ -266,7 +266,7 @@ Transcripts of the three design sessions that preceded implementation: [`docs/tr
 Found in a review of the finished code, listed here rather than left for a reader to discover.
 
 1. **No CI.** NFR-3.3 requires build, tests, and a dependency vulnerability check to run
-   automatically. `.github/workflows/` is empty. A 205-test suite nobody is obliged to run is a
+   automatically. `.github/workflows/` is empty. A 211-test suite nobody is obliged to run is a
    suggestion, and this codebase's safety argument rests on those tests.
 2. **Rate limiting is not proxy-aware.** It partitions on the connection's remote address with no
    forwarded-headers configuration, so behind a load balancer every caller shares one bucket.
