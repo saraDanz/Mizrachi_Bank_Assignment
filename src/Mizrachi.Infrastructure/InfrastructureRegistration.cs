@@ -1,3 +1,5 @@
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Mizrachi.Application.Abstractions;
@@ -66,10 +68,55 @@ public static class InfrastructureRegistration
                 services.AddSingleton<IUserRepository, InMemoryUserRepository>();
                 break;
 
+            case PersistenceOptions.Providers.Sqlite:
+                AddSqlite(services, configuration);
+                break;
+
             default:
                 throw new InvalidOperationException(
-                    $"Persistence:Provider is '{provider ?? "(not set)"}'. " +
-                    $"Valid values are: {PersistenceOptions.Providers.InMemory}.");
+                    $"Persistence:Provider is '{provider ?? "(not set)"}'. Valid values are: " +
+                    $"{PersistenceOptions.Providers.InMemory}, {PersistenceOptions.Providers.Sqlite}.");
         }
+    }
+
+    /// <remarks>
+    /// WAL and a busy timeout are not tuning. SQLite's default journal serialises writers so
+    /// aggressively that concurrent inserts surface as SQLITE_BUSY rather than as the unique
+    /// constraint violation FR-1.8 is about; with these set, the losers of a race get the
+    /// answer they should get.
+    /// </remarks>
+    private static void AddSqlite(IServiceCollection services, IConfiguration configuration)
+    {
+        var filePath = configuration
+            .GetSection(PersistenceOptions.SectionName)[nameof(PersistenceOptions.FilePath)];
+
+        if (string.IsNullOrWhiteSpace(filePath))
+        {
+            throw new InvalidOperationException(
+                $"Persistence:FilePath is required when Persistence:Provider is " +
+                $"'{PersistenceOptions.Providers.Sqlite}'.");
+        }
+
+        var fullPath = Path.GetFullPath(filePath);
+        var directory = Path.GetDirectoryName(fullPath);
+        if (!string.IsNullOrEmpty(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        var connectionString = new SqliteConnectionStringBuilder
+        {
+            DataSource = fullPath,
+            Mode = SqliteOpenMode.ReadWriteCreate,
+            Cache = SqliteCacheMode.Shared,
+            Pooling = true,
+            DefaultTimeout = 30
+        }.ToString();
+
+        services.AddDbContextFactory<UsersDbContext>(options =>
+            options.UseSqlite(connectionString, sqlite => sqlite.CommandTimeout(30)));
+
+        services.AddSingleton<IUserRepository, SqliteUserRepository>();
+        services.AddSingleton<IDatabaseInitializer, SqliteDatabaseInitializer>();
     }
 }

@@ -41,11 +41,18 @@ public abstract class UserRepositoryContractTests : IDisposable
             .AddInfrastructure(configuration)
             .BuildServiceProvider();
 
+        OnStoreCreated(_services);
+
         Repository = _services.GetRequiredService<IUserRepository>();
     }
 
     /// <summary>The <c>Persistence:*</c> settings that select and configure this store.</summary>
     protected abstract IReadOnlyDictionary<string, string?> ProviderConfiguration();
+
+    /// <summary>Hook for stores needing preparation before use, such as creating a schema.</summary>
+    protected virtual void OnStoreCreated(IServiceProvider services)
+    {
+    }
 
     protected IUserRepository Repository { get; }
 
