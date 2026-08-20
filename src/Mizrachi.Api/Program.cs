@@ -1,5 +1,5 @@
 
-namespace Mizrachi_Bank_Assignment
+namespace Mizrachi.Api
 {
     public class Program
     {
