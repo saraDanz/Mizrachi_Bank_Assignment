@@ -2,6 +2,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Mizrachi.Application.Abstractions;
 using Mizrachi.Application.UseCases;
 using Mizrachi.Domain;
@@ -21,10 +22,13 @@ public static class InfrastructureRegistration
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        // JwtOptionsValidator rather than ValidateDataAnnotations: a missing signing key is the
+        // one startup failure a reviewer cloning this repository will actually hit, and the
+        // message has to tell them the key name and the command, not just "required" (NFR-1.4).
+        services.AddSingleton<IValidateOptions<JwtOptions>, JwtOptionsValidator>();
         services
             .AddOptions<JwtOptions>()
             .Bind(configuration.GetSection(JwtOptions.SectionName))
-            .ValidateDataAnnotations()
             .ValidateOnStart();
 
         services
