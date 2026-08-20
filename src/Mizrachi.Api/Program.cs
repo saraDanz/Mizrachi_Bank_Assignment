@@ -1,6 +1,7 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Mizrachi.Api.Errors;
 using Mizrachi.Api.Middleware;
@@ -89,17 +90,27 @@ namespace Mizrachi.Api
         /// </remarks>
         private static void AddAuthentication(WebApplicationBuilder builder)
         {
-            var jwt = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
-                ?? throw new InvalidOperationException($"The '{JwtOptions.SectionName}' configuration section is missing.");
+            var requireHttpsMetadata = !builder.Environment.IsDevelopment();
 
             builder.Services
                 .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                .AddJwtBearer(options =>
-                {
-                    options.MapInboundClaims = false;
-                    options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
+                .AddJwtBearer();
 
-                    options.TokenValidationParameters = new TokenValidationParameters
+            // JwtOptions is resolved from the container when the bearer options are built, not
+            // read out of configuration here. Reading it at registration time would capture
+            // whatever configuration existed at that moment and ignore any source added later,
+            // and it would bypass the validation that makes a missing signing key a startup
+            // failure rather than a malformed key at first request (NFR-1.4, NFR-2.6).
+            builder.Services
+                .AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+                .Configure<IOptions<JwtOptions>>((bearer, jwtOptions) =>
+                {
+                    var jwt = jwtOptions.Value;
+
+                    bearer.MapInboundClaims = false;
+                    bearer.RequireHttpsMetadata = requireHttpsMetadata;
+
+                    bearer.TokenValidationParameters = new TokenValidationParameters
                     {
                         ValidateIssuer = true,
                         ValidateAudience = true,
