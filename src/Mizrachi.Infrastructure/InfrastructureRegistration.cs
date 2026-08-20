@@ -2,6 +2,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Mizrachi.Application.Abstractions;
 using Mizrachi.Application.UseCases;
@@ -18,14 +19,30 @@ namespace Mizrachi.Infrastructure;
 /// </summary>
 public static class InfrastructureRegistration
 {
+    /// <param name="isDevelopmentEnvironment">
+    /// Whether the host is running in Development. It is passed in rather than read from an
+    /// <c>IHostEnvironment</c> so that Infrastructure keeps no dependency on the hosting stack,
+    /// and it defaults to <see langword="false"/> so that a caller who says nothing gets the
+    /// stricter behaviour rather than the relaxed one.
+    /// </param>
     public static IServiceCollection AddInfrastructure(
         this IServiceCollection services,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        bool isDevelopmentEnvironment = false)
     {
         // JwtOptionsValidator rather than ValidateDataAnnotations: a missing signing key is the
         // one startup failure a reviewer cloning this repository will actually hit, and the
         // message has to tell them the key name and the command, not just "required" (NFR-1.4).
         services.AddSingleton<IValidateOptions<JwtOptions>, JwtOptionsValidator>();
+
+        // Registered unconditionally and told the environment, rather than registered only in
+        // Development: one wiring path, and the decision is visible in one place inside the
+        // type itself. It is a no-op outside Development (NFR-1.5).
+        services.AddSingleton<IPostConfigureOptions<JwtOptions>>(serviceProvider =>
+            new EphemeralDevelopmentSigningKey(
+                isDevelopmentEnvironment,
+                serviceProvider.GetRequiredService<ILogger<EphemeralDevelopmentSigningKey>>()));
+
         services
             .AddOptions<JwtOptions>()
             .Bind(configuration.GetSection(JwtOptions.SectionName))

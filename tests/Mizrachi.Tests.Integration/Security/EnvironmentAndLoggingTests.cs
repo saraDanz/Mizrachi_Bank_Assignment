@@ -1,6 +1,4 @@
 using System.Net;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 namespace Mizrachi.Tests.Integration.Security;
 
@@ -113,76 +111,5 @@ public sealed class EnvironmentAndLoggingTests
         Assert.Equal(
             header!.Single(),
             (await response.ReadJsonAsync()).GetProperty("correlationId").GetString());
-    }
-
-    private sealed class LoggingApiFactory : ApiFactory
-    {
-        private readonly ILoggerProvider _provider;
-
-        public LoggingApiFactory(ILoggerProvider provider) => _provider = provider;
-
-        protected override void ConfigureWebHost(Microsoft.AspNetCore.Hosting.IWebHostBuilder builder)
-        {
-            base.ConfigureWebHost(builder);
-
-            builder.ConfigureServices(services =>
-                services.AddLogging(logging =>
-                {
-                    logging.SetMinimumLevel(LogLevel.Trace);
-                    logging.AddProvider(_provider);
-                }));
-        }
-    }
-
-    /// <summary>Hand-written logger that keeps every formatted message. No mocking library.</summary>
-    private sealed class RecordingLoggerProvider : ILoggerProvider
-    {
-        private readonly List<string> _written = new();
-
-        public IReadOnlyList<string> Written
-        {
-            get
-            {
-                lock (_written)
-                {
-                    return _written.ToList();
-                }
-            }
-        }
-
-        public ILogger CreateLogger(string categoryName) => new RecordingLogger(_written);
-
-        public void Dispose()
-        {
-        }
-
-        private sealed class RecordingLogger : ILogger
-        {
-            private readonly List<string> _written;
-
-            public RecordingLogger(List<string> written) => _written = written;
-
-            public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
-
-            public bool IsEnabled(LogLevel logLevel) => true;
-
-            public void Log<TState>(
-                LogLevel logLevel,
-                EventId eventId,
-                TState state,
-                Exception? exception,
-                Func<TState, Exception?, string> formatter)
-            {
-                lock (_written)
-                {
-                    _written.Add(formatter(state, exception));
-
-                    if (exception is not null)
-                    {
-                        _written.Add(exception.ToString());
-                    }
-                }
-            }
-        }
     }
 }

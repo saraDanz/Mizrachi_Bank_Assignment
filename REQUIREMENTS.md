@@ -85,7 +85,8 @@ of `UserId`, `UserName`, `UserPassword`.
 | NFR-1.1 | Runs on a clean machine with no database software installed and no setup steps. |
 | NFR-1.2 | Can also be run against a durable store, demonstrating that data survives a restart. |
 | NFR-1.3 | The choice between stores is made by configuration, not by a code change. |
-| NFR-1.4 | Invalid configuration fails at startup with a clear message, not at first request. |
+| NFR-1.4 | Invalid configuration fails at startup with a clear message, not at first request. The sole exception is NFR-1.5. |
+| NFR-1.5 | In **Development only**, an absent JWT signing key is replaced by a cryptographically random key generated in memory at startup, announced by a warning that says the key is ephemeral and that tokens do not survive a restart. The key is never written to disk and never logged. In every other environment an absent key still fails at startup. |
 | NFR-2.1 | Passwords are never stored in a recoverable form. Storage uses a salted, iterated, industry-standard password hashing function with per-user salt. |
 | NFR-2.2 | Bespoke cryptographic code is avoided; a vetted, maintained implementation is used. |
 | NFR-2.3 | Passwords are never written to logs. Usernames are never written to logs on a **failed** authentication, because that field may contain a mistyped near-miss credential and is personal data. |
@@ -147,6 +148,31 @@ written requirement was judged worse than scoping administrative deletion out.
 administrative operation. This contract chooses self-service, for the reason above. If
 the administrative reading was intended, this is a considered disagreement rather than an
 oversight — see OQ-1.
+
+### 3.5 Development signing key — **generated in memory when absent, never elsewhere**
+
+A reviewer clones the repository and runs it. With no signing key set the host refuses to
+start, which is correct everywhere except on the machine of someone who has not been told
+about the key yet: the first thing they see is a failure, and the endpoint that proves the
+authentication flow works is the one they cannot reach.
+
+In Development, and only there, an **absent** `Jwt:SigningKey` is replaced by 32 random
+bytes generated at startup and held in memory. The API starts and the whole flow —
+register, validate, receive a token, delete with it — works immediately (NFR-1.5).
+
+*Why this is not the `?? "dev-key"` fallback NFR-1.4 exists to forbid:* that pattern
+supplies a **known, constant** value, and it does so in every environment, so a
+misconfigured production host runs happily on a key an attacker can read in the source. This
+supplies an **unpredictable** value, in one environment, and says so loudly. Outside
+Development the behaviour is unchanged: the host stops, naming the key and the command that
+sets it.
+
+*What it costs:* tokens do not survive a restart, and two instances do not accept each
+other's tokens. Both are stated in the warning, because a developer debugging "my token
+stopped working" should not have to find this decision to explain it.
+
+*Bounds:* a key that is configured but **too short** is never replaced — that is an operator
+error, and it still stops the host. Absence is the only trigger.
 
 ---
 

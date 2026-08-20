@@ -33,8 +33,12 @@ namespace Mizrachi.Api
             builder.Services.AddApiRateLimiting();
 
             // The only call into Infrastructure. Which store backs the API is decided by
-            // configuration inside here, never by a code change (NFR-1.3).
-            builder.Services.AddInfrastructure(builder.Configuration);
+            // configuration inside here, never by a code change (NFR-1.3). The environment is
+            // passed because one behaviour turns on it: a missing signing key is generated in
+            // memory in Development and fails startup everywhere else (NFR-1.5).
+            builder.Services.AddInfrastructure(
+                builder.Configuration,
+                builder.Environment.IsDevelopment());
 
             AddAuthentication(builder);
 

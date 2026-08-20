@@ -6,6 +6,8 @@ namespace Mizrachi.Infrastructure.Security;
 /// <remarks>
 /// <see cref="SigningKey"/> has no default and never appears in a committed file. It comes from
 /// user-secrets or an environment variable, and its absence fails at startup (NFR-1.4, NFR-2.6).
+/// The one exception is Development, where <see cref="EphemeralDevelopmentSigningKey"/> fills it
+/// with a random in-memory value that lasts as long as the process (NFR-1.5).
 ///
 /// These members carry no validation attributes on purpose. <see cref="JwtOptionsValidator"/> is
 /// the single authority, because a data-annotation failure can only report that a member is

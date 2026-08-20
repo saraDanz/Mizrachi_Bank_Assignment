@@ -13,8 +13,8 @@ each one has a test which was checked to fail when its control is removed.
 
 Nothing to install beyond the .NET 8 SDK: no database server, no Docker, no setup script.
 
-**1. Generate a signing key.** There is no default and no committed value, so the API will not
-start without one. Any 32 or more bytes of random data will do.
+**1. Generate a signing key.** There is no default and no committed value. Any 32 or more bytes
+of random data will do. In Development you can skip steps 1 and 2 entirely — see below.
 
 ```powershell
 # Windows PowerShell
@@ -43,8 +43,13 @@ dotnet run --project src/Mizrachi.Api
 
 Swagger is at `/swagger`, in Development only.
 
-If you skip step 2, the API stops at startup instead of falling back to a default. The failure
-names the missing key and the command that sets it, and never prints the value.
+If you skip step 2 **in Development**, the API starts anyway on a random key generated in
+memory, and warns that it has. Tokens then stop being accepted when you stop the process, and
+two instances will not accept each other's tokens — which is exactly why this is
+Development-only. The key is never written to disk and never printed.
+
+**Outside Development there is no fallback.** The host stops at startup, names the missing key
+and the command that sets it, and never prints the value.
 
 User Secrets are a Development-only configuration source. To run outside Development, supply the
 same key as an environment variable — `Jwt__SigningKey`, with a double underscore, maps to the

@@ -16,7 +16,12 @@
   },
 
   // Jwt:SigningKey does NOT belong in this file, and there is no default for it.
-  // Supply it out of band, at least 32 bytes:
+  //
+  // In Development you may leave it unset: a random key is generated in memory at startup and a
+  // warning says so. Tokens issued then stop being accepted when the process stops (NFR-1.5).
+  // Outside Development an unset key stops the host.
+  //
+  // To set it, supply it out of band, at least 32 bytes:
   //   dotnet user-secrets set "Jwt:SigningKey" "<a long random value>" --project src/Mizrachi.Api
   // or:
   //   $env:Jwt__SigningKey = "<a long random value>"

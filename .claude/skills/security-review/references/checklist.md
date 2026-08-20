@@ -6,7 +6,7 @@ severity, however unexploitable it looks.
 **SEC-1 Secrets and config**
 - 1.1! No secret, key, or credential in any committed file; signing keys from user-secrets or environment only (NFR-2.6).
 - 1.2 Committed `appsettings*.json` holds placeholders only; `.gitignore` still covers `appsettings.Development.json`, `*.user`, `.vs/`, and any secret path this change adds.
-- 1.3 No hard-coded fallback (`?? "dev-key"`) — missing config fails at startup, not at first request (NFR-1.4).
+- 1.3 No hard-coded fallback (`?? "dev-key"`) — missing config fails at startup, not at first request (NFR-1.4). Exactly one carve-out, §3.5/NFR-1.5: an *absent* `Jwt:SigningKey`, in Development only, is filled with a random in-memory key and warned about. A **constant** fallback, one that applies **outside** Development, one that replaces a **configured-but-too-short** key, or one that writes or logs the value, is still a finding.
 
 **SEC-2 Password handling**
 - 2.1! No hand-written crypto; hashing goes through the framework hasher behind our abstraction (NFR-2.2).
