@@ -361,3 +361,49 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# ---------------------------------------------------------------
+# Banking API — credential & sensitive-data paths
+# (additions beyond the stock VisualStudio.gitignore template)
+# ---------------------------------------------------------------
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# Local configuration overrides — put real values here, never in tracked appsettings
+appsettings.Local.json
+appsettings.*.Local.json
+appsettings.*.local.json
+appsettings.Development.json
+
+# ASP.NET Core User Secrets (normally outside the repo — defensive)
+secrets.json
+
+# Certificates, private keys, keystores (*.pfx already covered above)
+*.pem
+*.key
+*.crt
+*.cer
+*.der
+*.p12
+*.jks
+*.keystore
+
+# Local databases (SQL Server *.mdf/*.ldf/*.ndf already covered above)
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Crash dumps — contain in-memory secrets and PII
+*.dmp
+
+# Backup / merge artifacts that can snapshot a secret-bearing file
+*.bak
+*.orig
+*.rej
+
+# Local agent tooling settings (machine-specific)
+.claude/settings.local.json

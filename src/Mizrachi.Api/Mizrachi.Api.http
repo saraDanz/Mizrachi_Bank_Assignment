@@ -1,0 +1,3 @@
+@Mizrachi_Api_HostAddress = http://localhost:5185
+
+### Requests are added as endpoints are implemented (TASKS.md task 12).

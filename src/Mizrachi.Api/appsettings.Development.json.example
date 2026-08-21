@@ -1,0 +1,33 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+
+  // Persistence:Provider selects the store. No code change is involved (NFR-1.3).
+  //   InMemory - nothing to install, nothing survives a restart
+  //   Sqlite   - a local file, survives a restart; set FilePath
+  //   JsonFile - a local file, survives a restart; set FilePath
+  "Persistence": {
+    "Provider": "InMemory",
+    "FilePath": "REPLACE_ME - e.g. ./data/users.db for Sqlite, ./data/users.json for JsonFile"
+  },
+
+  // Jwt:SigningKey does NOT belong in this file, and there is no default for it.
+  //
+  // In Development you may leave it unset: a random key is generated in memory at startup and a
+  // warning says so. Tokens issued then stop being accepted when the process stops (NFR-1.5).
+  // Outside Development an unset key stops the host.
+  //
+  // To set it, supply it out of band, at least 32 bytes:
+  //   dotnet user-secrets set "Jwt:SigningKey" "<a long random value>" --project src/Mizrachi.Api
+  // or:
+  //   $env:Jwt__SigningKey = "<a long random value>"
+  "Jwt": {
+    "Issuer": "mizrachi-bank-api",
+    "Audience": "mizrachi-bank-api",
+    "LifetimeMinutes": 15
+  }
+}
